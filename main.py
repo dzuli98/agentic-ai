@@ -1,6 +1,7 @@
 import os
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -18,11 +19,8 @@ def main():
         input_variables=["information"], template=summary_template
     ) # it is better then using fstring as it will be easier to debug if prompt is broken
     
-    llm = ChatGroq(
-        model="llama-3.1-8b-instant",
-        temperature=0,
-        max_retries=0
-    )
+    # llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0, max_retries=0)
+    llm = ChatOllama(model="gemma3:270m", temperature=0, max_retries=0)
     # runnable chain
     # summary_prompt_template -> llm
     chain = summary_prompt_template | llm # langchain expression language
