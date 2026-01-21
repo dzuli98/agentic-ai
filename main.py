@@ -1,45 +1,36 @@
-import os
-from langchain_core.prompts import PromptTemplate
-from langchain_ollama import ChatOllama
+from dotenv import load_dotenv
 from langchain.agents import create_agent
-from langchain.tools import tool
 from langchain_core.messages import HumanMessage
-from langchain_groq import ChatGroq
-from tavily import TavilyClient
+from langchain_ollama import ChatOllama
+from typing import List
+from pydantic import BaseModel, Field
+from langchain_tavily import TavilySearch
 
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-tavily = TavilyClient()
-# Define a simple search tool
-# always add the description for the tool as it helps the agent to decide when to use it
-@tool
-def search(query: str) -> str:
-    """
-    Tool that searches over the internet.
-    Args:
-        query: The query to search for.
-    Returns:
-        The search result
-    """
-    print(f"Search results for '{query}'")
-    return tavily.search(query)
+class Source(BaseModel):
+    url: str = Field(..., description="The URL of the source document.")
 
-llm = ChatOllama(
-        model="qwen3:0.6b",  
-        max_retries=0
-    )
-tools = [search]
-agent = create_agent(model = llm, tools = tools)
+class AgentResponse(BaseModel):
+    answer: str = Field(..., description="The final answer to the user's question.")
+    sources: List[Source] = Field(default_factory=list, description="List of source documents used to generate the answer.")
+
+
+llm = ChatOllama(model="qwen3:0.6b", max_retries=0)
+tools = [TavilySearch()]
+agent = create_agent(model=llm, tools=tools, response_format=AgentResponse) # this ollama model doenst support this but OpenAI
+
 
 def main():
-    print('Hello!')
+    print("Hello!")
     result = agent.invoke(
-        {
-            "messages": [HumanMessage(content="What's the weather like in Tokyo?")]
-        }
+        {"messages": [HumanMessage(content="Search for 2 job postings using langchain for python developer in belgrade on linkedin?")]}
     )
-    print(f"Agent result: {result}")
+    print(result)
+
+
 if __name__ == "__main__":
     main()
